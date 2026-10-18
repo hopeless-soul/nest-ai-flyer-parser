@@ -9,7 +9,7 @@ import {
 import type { Relation, ValueTransformer } from 'typeorm';
 import { FlyerPage } from './flyer-page.entity';
 import type { ShopKey } from '../../shops/shop.config.type';
-import { ProductCategoryKey } from '../types/product-category.type';
+import type { ProductCategoryKey } from '../types/product-category.type';
 
 // pg returns numeric as string; prices are small, so a JS number is safe
 const decimal: ValueTransformer = {
@@ -66,10 +66,12 @@ export class FlyerOffer {
   @Column(price) discountedPrice!: number | null;
   @Column(price) loyaltyPrice!: number | null;
 
-  @Column({ type: 'number', nullable: true })
+  // Discount of `discountedPrice` in percent, e.g. 25
+  @Column({ type: 'smallint', nullable: true })
   discount!: number | null;
 
-  @Column({ type: 'number', nullable: true })
+  // Discount of `loyaltyPrice` in percent
+  @Column({ type: 'smallint', nullable: true })
   loyaltyDiscount!: number | null;
 
   // e.g.: flyers/<storeName>/<flyerId>/offers/<offerId>.<hash8>.webp

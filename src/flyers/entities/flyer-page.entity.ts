@@ -28,7 +28,7 @@ export class FlyerPage {
   @JoinColumn({ name: 'flyerId' })
   flyer!: Relation<Flyer>;
 
-  @Column({ type: 'varchar', length: 8, default: PageStatus.Pending })
+  @Column({ type: 'varchar', length: 16, default: PageStatus.Pending })
   status!: PageStatus;
 
   /**
@@ -37,13 +37,13 @@ export class FlyerPage {
   @Column({ type: 'int' })
   pageNumber!: number;
 
-  // e.g.: flyers/<shopKey>/<flyerId>/pages/<pageId>.<hash8>.webp
-  @Column({ type: 'text' })
-  imageKey!: string;
+  // e.g.: flyers/<shopKey>/<flyerId>/pages/<pageId>.<hash8>.webp; null until uploaded
+  @Column({ type: 'text', nullable: true })
+  imageKey!: string | null;
 
-  // e.g.: webp sha256
-  @Column({ type: 'char', length: 64 })
-  imageHash!: string;
+  // e.g.: webp sha256; null until uploaded
+  @Column({ type: 'char', length: 64, nullable: true })
+  imageHash!: string | null;
 
   @Column({ type: 'int', nullable: true })
   width!: number | null;
