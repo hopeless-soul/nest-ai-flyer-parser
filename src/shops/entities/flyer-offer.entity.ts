@@ -25,7 +25,7 @@ const price = {
 } as const;
 
 @Entity()
-@Index(['shop'])
+@Index(['shop', 'validTo'])
 export class FlyerOffer {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
