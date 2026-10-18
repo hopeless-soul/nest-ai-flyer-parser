@@ -1,34 +1,24 @@
-import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { DatabaseModule } from './database/database.module';
-import { ShopsModule } from './shops/shops.module';
-import { ConfigModule } from '@nestjs/config';
-import { z } from 'zod';
+import { DynamicModule, Module, type Type } from '@nestjs/common';
+import type { AppMode } from './app-mode';
+import { CoreModule } from './core/core.module';
 import { FlyersModule } from './flyers/flyers.module';
-import { SourceProvidersModule } from './source-providers/source-providers.module';
+import { ShopsModule } from './shops/shops.module';
 
-@Module({
-  imports: [
-    DatabaseModule,
-    ShopsModule,
-    ConfigModule.forRoot({
-      isGlobal: true,
-      envFilePath: '.env',
-      validationSchema: z.object({
-        APP_MODE: z.enum(['api', 'worker', 'all']).default('all'),
-        NODE_ENV: z.enum(['development', 'production', 'worker']).default('development'),
-        PORT: z.coerce.number().default(3000),
-        DB_PORT: z.coerce.number().default(5432),
-        DB_NAME: z.string().nonempty(),
-        DB_USERNAME: z.string().nonempty(),
-        DB_PASSWORD: z.string().nonempty(),
-      }),
-    }),
-    FlyersModule,
-    PageProvidersModule,
-  ],
-  controllers: [AppController],
-  providers: [AppService],
-})
-export class AppModule {}
+/** Feature modules of the HTTP API (`api`, `all`); completed in Task 12 */
+const API_MODULES: Type[] = [ShopsModule, FlyersModule];
+
+/** Feature modules of the background worker (`worker`, `all`); completed in Task 12 */
+const WORKER_MODULES: Type[] = [ShopsModule, FlyersModule];
+
+/** Root module; `forMode` picks the feature modules for the process role */
+@Module({})
+export class AppModule {
+  /** Build the root module for `mode`; a module needed by both roles is imported once */
+  static forMode(mode: AppMode): DynamicModule {
+    const modules = new Set<Type>([
+      ...(mode === 'worker' ? [] : API_MODULES),
+      ...(mode === 'api' ? [] : WORKER_MODULES),
+    ]);
+    return { module: AppModule, imports: [CoreModule, ...modules] };
+  }
+}
