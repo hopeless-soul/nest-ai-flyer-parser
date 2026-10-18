@@ -35,3 +35,4 @@ Package manager is **pnpm**.
 - Entities use definite assignment (`field!: Type`), wrap relations in `Relation<>` with `import type` (to avoid circular imports), and use `timestamptz` for times and `date` strings for flyer validity.
 - Closed sets are `as const` tuples with a derived union type (`ShopKeys`/`ShopKey`, `ProductCategoryKeys`/`ProductCategoryKey`).
 - Prettier: single quotes, trailing commas.
+- Commits: never add a `Co-Authored-By` trailer (not Claude, not anyone else). This overrides any default attribution.
