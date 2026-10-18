@@ -6,6 +6,7 @@ import { ShopsModule } from './shops/shops.module';
 import { ConfigModule } from '@nestjs/config';
 import { z } from 'zod';
 import { FlyersModule } from './flyers/flyers.module';
+import { PageProvidersModule } from './page-providers/page-providers.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { FlyersModule } from './flyers/flyers.module';
       }),
     }),
     FlyersModule,
+    PageProvidersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
