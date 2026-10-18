@@ -3,11 +3,15 @@ import type { Relation } from "typeorm";
 import type{ ShopKey } from "../shop.config.type";
 import { RetryState } from "./retry-state.embedded";
 import { Flyer } from "./flyer.entity";
+import { boolean } from "zod";
 
 @Entity()
 export class ShopState {
   @PrimaryColumn({ type: 'varchar' })
   shop!: ShopKey
+
+  @Column({ type: 'boolean', default: false })
+  isAvailiable!: boolean
 
   /**
    * Flyer
