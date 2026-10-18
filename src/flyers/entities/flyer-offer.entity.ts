@@ -66,10 +66,10 @@ export class FlyerOffer {
   @Column(price) discountedPrice!: number | null;
   @Column(price) loyaltyPrice!: number | null;
 
-  @Column({ type: 'smallint', nullable: true })
+  @Column({ type: 'number', nullable: true })
   discount!: number | null
 
-  @Column({ type: 'smallint', nullable: true })
+  @Column({ type: 'number', nullable: true })
   loyaltyDiscount!: number | null
 
   // e.g.: flyers/<storeName>/<flyerId>/offers/<offerId>.<hash8>.webp

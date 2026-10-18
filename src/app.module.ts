@@ -6,7 +6,7 @@ import { ShopsModule } from './shops/shops.module';
 import { ConfigModule } from '@nestjs/config';
 import { z } from 'zod';
 import { FlyersModule } from './flyers/flyers.module';
-import { PageProvidersModule } from './page-providers/page-providers.module';
+import { SourceProvidersModule } from './source-providers/source-providers.module';
 
 @Module({
   imports: [
