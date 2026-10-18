@@ -15,7 +15,6 @@ import { ShopState } from '../../shops/entities/shop-state.entity';
 import { FlyerPage } from './flyer-page.entity';
 import { FlyerStatus } from '../enums/flyer.enums';
 
-
 @Entity()
 @Index(['shop', 'validTo'])
 export class Flyer {
@@ -52,21 +51,21 @@ export class Flyer {
    * Pages
    */
   @OneToMany(() => FlyerPage, (page) => page.flyer)
-  pages!: Relation<FlyerPage[]>
+  pages!: Relation<FlyerPage[]>;
 
   /**
    * Context
    */
   // {shop}_flyer.json
   @Column({ type: 'jsonb', nullable: true })
-  context!: Record<string, unknown> | null; 
+  context!: Record<string, unknown> | null;
 
   /**
    * Timestamps
    */
   @CreateDateColumn({ type: 'timestamptz' })
-  createdAt!: Date
+  createdAt!: Date;
 
   @UpdateDateColumn({ type: 'timestamptz' })
-  updatedAt!: Date
+  updatedAt!: Date;
 }

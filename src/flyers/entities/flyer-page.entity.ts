@@ -73,5 +73,5 @@ export class FlyerPage {
    * Offers
    */
   @OneToMany(() => FlyerOffer, (offer) => offer.page)
-  offers!: Relation<FlyerOffer[]>
+  offers!: Relation<FlyerOffer[]>;
 }

@@ -4,10 +4,7 @@ import { FlyersModule } from '../flyers/flyers.module';
 import { ShopState } from './entities/shop-state.entity';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([ShopState]),
-    FlyersModule,
-  ],
+  imports: [TypeOrmModule.forFeature([ShopState]), FlyersModule],
   controllers: [],
   providers: [],
   exports: [FlyersModule],

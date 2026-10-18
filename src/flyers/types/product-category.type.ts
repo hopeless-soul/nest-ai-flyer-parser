@@ -1,4 +1,4 @@
-  export const ProductCategoryKeys = [
+export const ProductCategoryKeys = [
   'other',
   'bakery',
   'fruits',
@@ -10,6 +10,6 @@
   'snacks',
   'grains&pasta',
   'sauces',
-  'household&cleaning'
-] as const
-export type ProductCategoryKey = (typeof ProductCategoryKeys)[number]
+  'household&cleaning',
+] as const;
+export type ProductCategoryKey = (typeof ProductCategoryKeys)[number];

@@ -1,10 +1,10 @@
 export enum FlyerStatus {
   // Entry created from the listing
-  Downloading = 'DOWNLOADING',       
+  Downloading = 'DOWNLOADING',
   // Pages uploaded to R2 & FlyerPages table
   PagesUploaded = 'PAGES_UPLOADED',
-  
-  // AI parsing 
+
+  // AI parsing
   Parsing = 'PARSING',
 
   // All pages parsed
@@ -15,5 +15,5 @@ export enum FlyerStatus {
   Failed = 'FAILED',
 }
 
-export const PARSED = [FlyerStatus.Ready, FlyerStatus.Partial]
-export const RESUMABLE = [FlyerStatus.PagesUploaded, FlyerStatus.Parsing]
+export const PARSED = [FlyerStatus.Ready, FlyerStatus.Partial];
+export const RESUMABLE = [FlyerStatus.PagesUploaded, FlyerStatus.Parsing];

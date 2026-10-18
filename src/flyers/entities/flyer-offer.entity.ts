@@ -67,18 +67,18 @@ export class FlyerOffer {
   @Column(price) loyaltyPrice!: number | null;
 
   @Column({ type: 'number', nullable: true })
-  discount!: number | null
+  discount!: number | null;
 
   @Column({ type: 'number', nullable: true })
-  loyaltyDiscount!: number | null
+  loyaltyDiscount!: number | null;
 
   // e.g.: flyers/<storeName>/<flyerId>/offers/<offerId>.<hash8>.webp
   @Column({ type: 'text', nullable: true })
-  cropKey!: string | null              
-  
-  @Column({ type: 'date' })
-  validFrom!: string
+  cropKey!: string | null;
 
   @Column({ type: 'date' })
-  validTo!: string
+  validFrom!: string;
+
+  @Column({ type: 'date' })
+  validTo!: string;
 }
