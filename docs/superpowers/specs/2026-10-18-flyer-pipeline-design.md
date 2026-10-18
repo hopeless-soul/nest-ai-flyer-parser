@@ -14,9 +14,10 @@ files of one run. They are never trusted, never resumed from, and always deleted
 
 ## Callers
 
-- **Worker** (`APP_MODE=worker|all`): a cron runs every hour (`PIPELINE_CRON`). For each enabled shop it
-  loads a flyer when the shop has none or the current one is overdue, and resumes or retries unfinished
-  flyers. Otherwise it skips the shop.
+- **Worker** (`APP_MODE=worker|all`): a cron runs **once a day** (`PIPELINE_CRON`). For each enabled shop it
+  loads a flyer when the shop has none or the current one is overdue. Otherwise it skips the shop.
+  Retries are the exception: a separate retry tick (`PIPELINE_RETRY_CRON`) acts only on shops whose
+  `retry.at` is due.
 - **API** (`APP_MODE=api|all`): serves offers to the frontend. Unguarded admin routes trigger load, refresh
   and re-parse for a given shop. The admin run executes **in the API process**: the route returns 202 and
   the run continues in the background, or the route returns 409 if the shop lease is held.
@@ -150,11 +151,18 @@ Other entry points:
 If R2 objects are missing (expired after 10 days), these throw `ImagesExpiredError`. There is no automatic
 refresh in that case.
 
-**Cron decision** (each tick, each enabled shop with a free lease):
-1. No current flyer, or today is past `validTo` in the shop timezone → `load`.
-2. The current flyer is `RESUMABLE`, or `PARTIAL`/`FAILED` with retries left, and `retry.at ≤ now` → `load`
-   (it resumes at step 7).
-3. Otherwise → skip.
+**Cron** (`worker/pipeline.cron.ts`, two jobs, both in timezone `Europe/Bratislava`, both skip shops whose
+lease is busy):
+
+- **Daily run** (`PIPELINE_CRON`, default `0 6 * * *`), for each enabled shop:
+  1. No current flyer, or today is past `validTo` in the shop timezone → `load`.
+  2. The current flyer is `RESUMABLE` (a run died mid-way) → `load` (it resumes).
+  3. Otherwise → skip.
+- **Retry tick** (`PIPELINE_RETRY_CRON`, default `*/15 * * * *`): runs one query for shops where
+  `retry.at ≤ now` and calls `load` for each of them. Covers `FETCH_FAILED`, `PAGES_FAILED` (a
+  `PARTIAL`/`FAILED` flyer with retries left resumes at step 7) and `AWAITING_NEW_FLYER`. With no due
+  retries, the tick does nothing beyond that query. The retry time lives in the DB (`retry.at`), so a
+  restart loses nothing.
 
 ## R2
 
@@ -244,7 +252,8 @@ R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET   required
 R2_PAGE_TTL_DAYS=10
 GEMINI_API_KEY                                                     required
 GEMINI_MODEL=gemini-3.5-flash-lite
-PIPELINE_CRON="0 * * * *"
+PIPELINE_CRON="0 6 * * *"            daily run
+PIPELINE_RETRY_CRON="*/15 * * * *"   retry tick (acts only on due retry.at)
 PIPELINE_TMP_DIR=<os.tmpdir()>/flyer-parser
 ```
 
