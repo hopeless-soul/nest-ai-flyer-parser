@@ -6,7 +6,7 @@ import { ShopsModule } from './shops/shops.module';
 import { ConfigModule } from '@nestjs/config';
 import { z } from 'zod';
 import { FlyersModule } from './flyers/flyers.module';
-import { PageProvidersModule } from './page-providers/page-providers.module';
+import { PageProvidersAdminModule } from './page-providers/page-providers-admin.module';
 
 @Module({
   imports: [
@@ -17,16 +17,20 @@ import { PageProvidersModule } from './page-providers/page-providers.module';
       envFilePath: '.env',
       validationSchema: z.object({
         APP_MODE: z.enum(['api', 'worker', 'all']).default('all'),
-        NODE_ENV: z.enum(['development', 'production', 'worker']).default('development'),
+        NODE_ENV: z
+          .enum(['development', 'production', 'worker'])
+          .default('development'),
         PORT: z.coerce.number().default(3000),
         DB_PORT: z.coerce.number().default(5432),
         DB_NAME: z.string().nonempty(),
         DB_USERNAME: z.string().nonempty(),
         DB_PASSWORD: z.string().nonempty(),
+        ADMIN_API_KEY: z.string().min(32).optional(),
       }),
     }),
     FlyersModule,
-    PageProvidersModule,
+    // Later: ApiModule imports PageProvidersAdminModule, the worker's SyncModule imports PageProvidersModule
+    PageProvidersAdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],
