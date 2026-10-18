@@ -15,10 +15,14 @@ import { ShopKeys, type ShopKey } from '../../shops/shop.config.type';
 import { SourceProviderExceptionFilter } from '../source-provider.exception-filter';
 import { SourceProvidersService } from '../source-providers.service';
 
-/** Body of POST /admin/source-providers/discover */
-const discoverManySchema = z
-  .object({ shops: z.array(z.enum(ShopKeys)).min(1).optional() })
-  .strict();
+/**
+ * Body of POST /admin/source-providers/discover.
+ * A missing body (Express 5 leaves `req.body` undefined) is treated as `{}`, meaning all enabled shops.
+ */
+const discoverManySchema = z.preprocess(
+  (body) => body ?? {},
+  z.object({ shops: z.array(z.enum(ShopKeys)).min(1).optional() }).strict(),
+);
 
 /** Admin routes (unguarded): source configs and dry-run discovery; nothing is downloaded or stored */
 @Controller('admin/source-providers')
