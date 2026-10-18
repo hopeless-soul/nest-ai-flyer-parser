@@ -24,6 +24,9 @@ export interface PageExtraction {
   model: string;
 }
 
+/** Timeout of a single Gemini HTTP request, in ms (`httpOptions.timeout`) */
+const GEMINI_TIMEOUT_MS = 120_000;
+
 /** Image mime types by file extension */
 const MIME_TYPES: Record<string, string> = {
   webp: 'image/webp',
@@ -83,6 +86,7 @@ export class GeminiClient {
   constructor(config: ConfigService<Env, true>) {
     this.client = new GoogleGenAI({
       apiKey: config.get('GEMINI_API_KEY', { infer: true }),
+      httpOptions: { timeout: GEMINI_TIMEOUT_MS },
     });
     this.model = config.get('GEMINI_MODEL', { infer: true });
   }

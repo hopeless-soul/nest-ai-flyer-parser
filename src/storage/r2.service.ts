@@ -19,6 +19,12 @@ const FLYER_LIFECYCLE_RULE_ID = 'flyer-objects-ttl';
 /** Lifetime of presigned GET URLs, in seconds */
 const PRESIGN_TTL_SECONDS = 60 * 60;
 
+/** Timeout of a whole R2 request (until the response is received), in ms */
+const R2_REQUEST_TIMEOUT_MS = 60_000;
+
+/** Timeout of opening the connection to R2, in ms */
+const R2_CONNECTION_TIMEOUT_MS = 10_000;
+
 /**
  * true only for the "object does not exist" errors (GetObject: NoSuchKey, HeadObject: NotFound).
  * Note: A 404 with another name (e.g. NoSuchBucket from a misconfigured R2_BUCKET) is not a missing object and must throw.
@@ -53,6 +59,10 @@ export class R2Service {
       // Note: R2 does not support the SDK's default CRC32 request checksums (aws-sdk-js-v3 >= 3.729)
       requestChecksumCalculation: 'WHEN_REQUIRED',
       responseChecksumValidation: 'WHEN_REQUIRED',
+      requestHandler: {
+        requestTimeout: R2_REQUEST_TIMEOUT_MS,
+        connectionTimeout: R2_CONNECTION_TIMEOUT_MS,
+      },
     });
   }
 

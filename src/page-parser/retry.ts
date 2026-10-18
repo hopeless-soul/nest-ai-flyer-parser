@@ -38,14 +38,22 @@ function requestedDelayMs(error: unknown): number | null {
   return match ? Number(match[1]) * 1000 : null;
 }
 
-/** Short error text for logs; API errors carry the whole JSON response in `message` */
+/**
+ * Short error text for logs
+ * Note: API errors carry the whole JSON response in `message`, so with a status it is `HTTP <status>: <message>`
+ * with whitespace collapsed and the message cut to 200 chars (`HTTP <status>` if there is no message)
+ */
 export function describeAttemptError(error: unknown): string {
   const status = statusOf(error);
-  return status !== null
-    ? `HTTP ${status}`
-    : error instanceof Error
-      ? error.message
-      : String(error);
+  if (status === null) {
+    return error instanceof Error ? error.message : String(error);
+  }
+  const message = (error as Error | null)?.message;
+  const text =
+    typeof message === 'string'
+      ? message.replace(/\s+/g, ' ').trim().slice(0, 200)
+      : '';
+  return text ? `HTTP ${status}: ${text}` : `HTTP ${status}`;
 }
 
 /**

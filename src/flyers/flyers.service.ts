@@ -71,8 +71,9 @@ export class FlyersService {
 
     const query = this.offers
       .createQueryBuilder('offer')
+      .innerJoin('offer.page', 'page')
       .where('offer.flyerId = :flyerId', { flyerId: state.currentFlyerId })
-      .orderBy('offer.pageId', 'ASC')
+      .orderBy('page.pageNumber', 'ASC')
       .addOrderBy('offer.position', 'ASC');
     if (category) {
       query.andWhere(':category = ANY(offer.category)', { category });
