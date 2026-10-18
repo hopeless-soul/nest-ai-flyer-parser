@@ -5,6 +5,9 @@ import { DatabaseModule } from './database/database.module';
 import { ShopsModule } from './shops/shops.module';
 import { ConfigModule } from '@nestjs/config';
 import { z } from 'zod';
+import { FlyersResolver } from './flyers/flyers.resolver';
+import { FlyersModule } from './flyers/flyers.module';
+import { FlyersResolver } from './flyers/flyers.resolver';
 
 @Module({
   imports: [
@@ -22,8 +25,9 @@ import { z } from 'zod';
         DB_PASSWORD: z.string().nonempty(),
       }),
     }),
+    FlyersModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, FlyersResolver],
 })
 export class AppModule {}

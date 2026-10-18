@@ -10,8 +10,8 @@ import {
 } from 'typeorm';
 import type { Relation } from 'typeorm';
 import { Flyer } from './flyer.entity';
-import { PageStatus } from '../enums/page.enums';
 import { FlyerOffer } from './flyer-offer.entity';
+import { PageStatus } from '../enums/page.enums';
 
 @Entity()
 @Unique(['flyerId', 'pageNumber'])

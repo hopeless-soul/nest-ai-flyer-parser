@@ -2,8 +2,7 @@ import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryColumn, Update
 import type { Relation } from "typeorm";
 import type{ ShopKey } from "../shop.config.type";
 import { RetryState } from "./retry-state.embedded";
-import { Flyer } from "./flyer.entity";
-import { boolean } from "zod";
+import { Flyer } from "../../flyers/entities/flyer.entity";
 
 @Entity()
 export class ShopState {

@@ -10,10 +10,11 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import type { Relation } from 'typeorm';
-import type { ShopKey } from '../shop.config.type';
-import { ShopState } from './shop-state.entity';
-import { FlyerStatus } from '../enums/flyer.enums';
+import type { ShopKey } from '../../shops/shop.config.type';
+import { ShopState } from '../../shops/entities/shop-state.entity';
 import { FlyerPage } from './flyer-page.entity';
+import { FlyerStatus } from '../enums/flyer.enums';
+
 
 @Entity()
 @Index(['shop', 'validTo'])

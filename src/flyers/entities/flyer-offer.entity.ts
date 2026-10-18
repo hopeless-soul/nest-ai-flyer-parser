@@ -8,7 +8,7 @@ import {
 } from 'typeorm';
 import type { Relation, ValueTransformer } from 'typeorm';
 import { FlyerPage } from './flyer-page.entity';
-import type { ShopKey } from '../shop.config.type';
+import type { ShopKey } from '../../shops/shop.config.type';
 import { ProductCategoryKey } from '../types/product-category.type';
 
 // pg returns numeric as string; prices are small, so a JS number is safe
