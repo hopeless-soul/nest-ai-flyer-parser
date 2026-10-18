@@ -19,17 +19,13 @@ const FLYER_LIFECYCLE_RULE_ID = 'flyer-objects-ttl';
 /** Lifetime of presigned GET URLs, in seconds */
 const PRESIGN_TTL_SECONDS = 60 * 60;
 
-/** true for the S3 "object does not exist" errors (GetObject: NoSuchKey, HeadObject: NotFound) */
+/**
+ * true only for the "object does not exist" errors (GetObject: NoSuchKey, HeadObject: NotFound).
+ * Note: A 404 with another name (e.g. NoSuchBucket from a misconfigured R2_BUCKET) is not a missing object and must throw.
+ */
 function isNotFound(error: unknown): boolean {
-  const { name, $metadata } = (error ?? {}) as {
-    name?: string;
-    $metadata?: { httpStatusCode?: number };
-  };
-  return (
-    name === 'NoSuchKey' ||
-    name === 'NotFound' ||
-    $metadata?.httpStatusCode === 404
-  );
+  const { name } = (error ?? {}) as { name?: string };
+  return name === 'NoSuchKey' || name === 'NotFound';
 }
 
 /**
@@ -54,6 +50,9 @@ export class R2Service {
         accessKeyId: config.get('R2_ACCESS_KEY_ID', { infer: true }),
         secretAccessKey: config.get('R2_SECRET_ACCESS_KEY', { infer: true }),
       },
+      // Note: R2 does not support the SDK's default CRC32 request checksums (aws-sdk-js-v3 >= 3.729)
+      requestChecksumCalculation: 'WHEN_REQUIRED',
+      responseChecksumValidation: 'WHEN_REQUIRED',
     });
   }
 
