@@ -9,8 +9,9 @@ export class ShopState {
   @PrimaryColumn({ type: 'varchar' })
   shop!: ShopKey
 
+  // Is availiable for frontend
   @Column({ type: 'boolean', default: false })
-  isAvailiable!: boolean
+  isAvailiable!: boolean 
 
   /**
    * Flyer
