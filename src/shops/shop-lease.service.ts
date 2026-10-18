@@ -29,6 +29,7 @@ export class LeaseBusyError extends Error {
 
 /** A held lease; renewed in the background until released */
 export interface ShopLease {
+  /** Shop whose lease this run holds */
   readonly shop: ShopKey;
   /** Stop renewing and free the shop */
   release(): Promise<void>;
@@ -66,6 +67,9 @@ export class ShopLeaseService {
       throw new LeaseBusyError(shop, state?.lockedUntil ?? null);
     }
 
+    /** Every lease write (renew, release) runs in order on this chain; it never rejects */
+    let chain: Promise<unknown> = Promise.resolve();
+
     /** Extend the lease by another LEASE_MS while we still own it */
     const renew = async (): Promise<void> => {
       const next = new Date(Date.now() + LEASE_MS);
@@ -73,19 +77,30 @@ export class ShopLeaseService {
       else this.logger.warn(`[${shop}] lease was lost before renewal`);
     };
     const timer = setInterval(() => {
-      renew().catch((error) =>
-        this.logger.warn(
-          `[${shop}] lease renewal failed: ${describeError(error)}`,
-        ),
-      );
+      chain = chain
+        .then(renew)
+        .catch((error) =>
+          this.logger.warn(
+            `[${shop}] lease renewal failed: ${describeError(error)}`,
+          ),
+        );
     }, RENEW_EVERY_MS);
     timer.unref();
 
+    let released = false;
     return {
       shop,
       release: async () => {
+        if (released) return;
+        released = true;
         clearInterval(timer);
-        await this.move(shop, until, null);
+        // Wait for any in-flight renew so `until` is the value it committed
+        await chain;
+        const freed = await this.move(shop, until, null);
+        if (!freed)
+          this.logger.warn(
+            `[${shop}] lease already expired or taken over at release`,
+          );
       },
     };
   }
