@@ -99,7 +99,11 @@ export class FlyerPipelineService {
    */
   async trigger(request: PipelineRequest): Promise<void> {
     const prepared = await this.prepare(request);
-    void this.execute(prepared.request, prepared.lease);
+    void this.execute(prepared.request, prepared.lease).catch((error) =>
+      this.logger.error(
+        `[${request.shop}] background run crashed: ${describeError(error)}`,
+      ),
+    );
   }
 
   /** true if the shop has a flyer whose run stopped midway (crash, fatal parse error) */
@@ -107,7 +111,11 @@ export class FlyerPipelineService {
     return this.flyers.exists({ where: { shop, status: In(UNFINISHED) } });
   }
 
-  /** Lease + reparse prechecks; frees the lease again if a precheck fails */
+  /**
+   * Lease + reparse prechecks; frees the lease again if a precheck fails
+   * Note: An explicit `flyerId` must exist and belong to `request.shop`, so a flyer is never parsed under another shop's lease.
+   * @throws The original precheck error, even when releasing the lease fails too
+   */
   private async prepare(
     request: PipelineRequest,
   ): Promise<{ lease: ShopLease; request: PipelineRequest }> {
@@ -115,6 +123,14 @@ export class FlyerPipelineService {
     try {
       if (request.action !== 'reparse') return { lease, request };
 
+      if (request.flyerId) {
+        const flyer = await this.flyers.findOneBy({ id: request.flyerId });
+        if (!flyer || flyer.shop !== request.shop) {
+          throw new FlyerNotFoundError(
+            `Flyer ${request.flyerId} not found for ${request.shop}`,
+          );
+        }
+      }
       const flyerId =
         request.flyerId ??
         (await this.shopState.get(request.shop)).currentFlyerId;
@@ -126,20 +142,26 @@ export class FlyerPipelineService {
       await this.parser.assertImagesAvailable(flyerId, request.pageIds);
       return { lease, request: { ...request, flyerId } };
     } catch (error) {
-      await lease.release();
+      try {
+        await lease.release();
+      } catch (releaseError) {
+        this.logger.error(
+          `[${request.shop}] could not release the lease after a failed precheck: ${describeError(releaseError)}`,
+        );
+      }
       throw error;
     }
   }
 
-  /** Do the work, record failures on ShopState, always release the lease; never throws */
+  /** Do the work, record failures on ShopState, always release the lease (a failing release is only logged); never throws */
   private async execute(
     request: PipelineRequest,
     lease: ShopLease,
   ): Promise<void> {
     const { shop, action } = request;
-    const config = this.sources.getConfig(shop);
     const started = Date.now();
     try {
+      const config = this.sources.getConfig(shop);
       await this.shopState.markAttempt(shop);
       if (action === 'reparse') {
         await this.reparse(request, config);
@@ -150,9 +172,15 @@ export class FlyerPipelineService {
         `[${shop}] ${action} finished in ${Math.round((Date.now() - started) / 1000)}s`,
       );
     } catch (error) {
-      await this.recordFailure(config, action, error);
+      await this.recordFailure(shop, action, error);
     } finally {
-      await lease.release();
+      try {
+        await lease.release();
+      } catch (releaseError) {
+        this.logger.error(
+          `[${shop}] could not release the lease: ${describeError(releaseError)}`,
+        );
+      }
     }
   }
 
@@ -185,7 +213,9 @@ export class FlyerPipelineService {
 
   /**
    * Decide what to do with a flyer that already exists
-   * - READY, or PARTIAL/FAILED with page retries used up → done (overdue current flyer → wait for a new one)
+   * - READY, or PARTIAL/FAILED that counts as finished → done (overdue current flyer → wait for a new one)
+   *   PARTIAL/FAILED is finished when its page retries are used up, or when the shop is already
+   *   AWAITING_NEW_FLYER for it (it was found finished and overdue before), so it is never re-parsed again
    * - every page in R2 → resume at parsing
    * - otherwise → false (the caller downloads it again)
    * @returns true when the run is done
@@ -197,8 +227,10 @@ export class FlyerPipelineService {
     const shop = config.key;
     const state = await this.shopState.get(shop);
     const exhausted =
-      state.retry.reason === RetryReason.PagesFailed &&
-      state.retry.attempts >= config.parser.maxAttempts;
+      (state.retry.reason === RetryReason.PagesFailed &&
+        state.retry.attempts >= config.parser.maxAttempts) ||
+      (state.retry.reason === RetryReason.AwaitingNewFlyer &&
+        state.currentFlyerId === flyer.id);
     const finished =
       flyer.status === FlyerStatus.Ready ||
       ((flyer.status === FlyerStatus.Partial ||
@@ -206,10 +238,12 @@ export class FlyerPipelineService {
         exhausted);
 
     if (finished) {
-      if (PARSED.includes(flyer.status) && state.currentFlyerId !== flyer.id) {
+      let isCurrent = state.currentFlyerId === flyer.id;
+      if (!isCurrent && PARSED.includes(flyer.status)) {
         await this.shopState.setCurrentFlyer(shop, flyer.id);
+        isCurrent = true;
       }
-      if (isOverdue(flyer.validTo, config.timezone)) {
+      if (isCurrent && isOverdue(flyer.validTo, config.timezone)) {
         await this.shopState.scheduleRetry(shop, RetryReason.AwaitingNewFlyer);
         this.logger.log(
           `[${shop}] ${flyer.id} is overdue and still the newest flyer; waiting for a new one`,
@@ -312,34 +346,35 @@ export class FlyerPipelineService {
    * reparse (admin): lastError only.
    */
   private async recordFailure(
-    config: ShopConfig,
+    shop: ShopKey,
     action: PipelineAction,
     error: unknown,
   ): Promise<void> {
     const message = describeError(error);
     this.logger.error(
-      `[${config.key}] ${action} failed: ${message}`,
+      `[${shop}] ${action} failed: ${message}`,
       error instanceof Error ? error.stack : undefined,
     );
     try {
       if (action === 'reparse') {
-        await this.shopState.recordError(config.key, message);
+        await this.shopState.recordError(shop, message);
         return;
       }
+      const config = this.sources.getConfig(shop);
       const reason =
         error instanceof FatalParseError
           ? RetryReason.PagesFailed
           : RetryReason.FetchFailed;
-      const at = await this.shopState.scheduleRetry(config.key, reason, {
+      const at = await this.shopState.scheduleRetry(shop, reason, {
         maxAttempts: config.parser.maxAttempts,
         error: message,
       });
       this.logger.warn(
-        `[${config.key}] ${reason}: ${at ? `retry at ${at.toISOString()}` : 'retries used up'}`,
+        `[${shop}] ${reason}: ${at ? `retry at ${at.toISOString()}` : 'retries used up'}`,
       );
     } catch (stateError) {
       this.logger.error(
-        `[${config.key}] could not record the failure: ${describeError(stateError)}`,
+        `[${shop}] could not record the failure: ${describeError(stateError)}`,
       );
     }
   }
