@@ -1,20 +1,19 @@
-import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { DatabaseModule } from './database/database.module';
-import { ShopsModule } from './shops/shops.module';
-import { ConfigModule } from '@nestjs/config';
+import { DynamicModule, Module } from '@nestjs/common';
+import type { AppMode } from './app-mode';
+import { CoreModule } from './core/core.module';
+import { ApiModule } from './api/api.module';
+import { WorkerModule } from './worker/worker.module';
 
-@Module({
-  imports: [
-    DatabaseModule, 
-    ShopsModule,
-    ConfigModule.forRoot({
-      isGlobal: true,
-      envFilePath: '.env',
-    }),
-  ],
-  controllers: [AppController],
-  providers: [AppService],
-})
-export class AppModule {}
+@Module({})
+export class AppModule {
+  static forMode(mode: AppMode): DynamicModule {
+    return {
+      module: AppModule,
+      imports: [
+        CoreModule,
+        ...(mode === 'api' || mode === 'all' ? [ApiModule] : []),
+        ...(mode === 'worker' || mode === 'all' ? [WorkerModule] : []),
+      ],
+    };
+  }
+}
