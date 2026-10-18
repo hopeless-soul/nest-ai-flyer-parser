@@ -19,12 +19,15 @@ export function isoDate(
   return date.toISOString().slice(0, 10);
 }
 
-/** true for a real `YYYY-MM-DD` date string */
+/**
+ * true for a real `YYYY-MM-DD` date string
+ * Note: rejects impossible dates such as 2026-02-30
+ */
 export function isIsoDate(value: unknown): value is string {
+  if (typeof value !== 'string' || !ISO_DATE.test(value)) return false;
+  const date = new Date(`${value}T00:00:00Z`);
   return (
-    typeof value === 'string' &&
-    ISO_DATE.test(value) &&
-    !Number.isNaN(Date.parse(value))
+    !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
   );
 }
 
