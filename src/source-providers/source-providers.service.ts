@@ -25,6 +25,21 @@ import {
   SOURCE_PROVIDERS,
 } from './source-providers.tokens';
 
+/** Schema of the one-off admin overrides of `shop` (body of POST /admin/source-providers/:shop/discover) */
+export function overridesSchemaOf(shop: ShopKey) {
+  const sourceSchema = SOURCE_OPTIONS_SCHEMAS[shop] as z.ZodObject;
+  return z
+    .object({
+      source: sourceSchema.partial().strict().optional(),
+      defaultFlyerDuration: z.number().int().min(1).max(31).optional(),
+      timezone: z
+        .string()
+        .refine(isValidTimeZone, 'unknown IANA time zone')
+        .optional(),
+    })
+    .strict();
+}
+
 /**
  * Entry point to the source providers, for the pipeline and the admin API.
  * Note: Admin overrides apply to one call only and are never stored.
@@ -106,19 +121,7 @@ export class SourceProvidersService implements OnModuleInit {
     shop: K,
     raw: unknown,
   ): ShopConfigOverrides<K> {
-    const sourceSchema = SOURCE_OPTIONS_SCHEMAS[shop] as z.ZodObject;
-    const schema = z
-      .object({
-        source: sourceSchema.partial().strict().optional(),
-        defaultFlyerDuration: z.number().int().min(1).max(31).optional(),
-        timezone: z
-          .string()
-          .refine(isValidTimeZone, 'unknown IANA time zone')
-          .optional(),
-      })
-      .strict();
-
-    const result = schema.safeParse(raw ?? {});
+    const result = overridesSchemaOf(shop).safeParse(raw ?? {});
     if (!result.success) {
       throw new InvalidOverridesError(
         shop,

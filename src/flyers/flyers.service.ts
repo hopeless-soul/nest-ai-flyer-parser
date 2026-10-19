@@ -7,24 +7,9 @@ import { ShopStateService } from '../shops/shop-state.service';
 import { R2Service } from '../storage/r2.service';
 import { FlyerOffer } from './entities/flyer-offer.entity';
 import { FlyerPage } from './entities/flyer-page.entity';
+import type { PageDto } from './dto/page.dto';
+import { FlyerSummaryDto, type ShopDto } from './dto/shop.dto';
 import type { ProductCategoryKey } from './types/product-category.type';
-
-/** A shop the frontend can show, with its current flyer */
-export interface AvailableShop {
-  shop: ShopKey;
-  name: string;
-  flyer: { id: string; validFrom: string; validTo: string } | null;
-}
-
-/** A page for the frontend, with a short-lived image URL */
-export interface PageView {
-  id: string;
-  pageNumber: number;
-  status: string;
-  width: number | null;
-  height: number | null;
-  imageUrl: string | null;
-}
 
 /** Read-only queries for the public API */
 @Injectable()
@@ -44,18 +29,12 @@ export class FlyersService {
   ) {}
 
   /** Shops with a READY or PARTIAL current flyer */
-  async availableShops(): Promise<AvailableShop[]> {
+  async availableShops(): Promise<ShopDto[]> {
     const states = await this.shopState.listAvailable();
     return states.map((state) => ({
       shop: state.shop,
       name: SHOP_CONFIGS[state.shop].name,
-      flyer: state.currentFlyer
-        ? {
-            id: state.currentFlyer.id,
-            validFrom: state.currentFlyer.validFrom,
-            validTo: state.currentFlyer.validTo,
-          }
-        : null,
+      flyer: FlyerSummaryDto.from(state.currentFlyer),
     }));
   }
 
@@ -82,7 +61,7 @@ export class FlyersService {
   }
 
   /** Pages of a flyer with presigned image URLs (null when the image is not in R2) */
-  async pagesOf(flyerId: string): Promise<PageView[]> {
+  async pagesOf(flyerId: string): Promise<PageDto[]> {
     const pages = await this.pages.find({
       where: { flyerId },
       order: { pageNumber: 'ASC' },

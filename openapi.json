@@ -1,0 +1,2183 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/shops": {
+      "get": {
+        "operationId": "FlyersController_shops",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ShopDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Shops with a current flyer",
+        "tags": [
+          "public"
+        ]
+      }
+    },
+    "/shops/{shop}/offers": {
+      "get": {
+        "operationId": "FlyersController_offers",
+        "parameters": [
+          {
+            "name": "shop",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "enum": [
+                "kaufland",
+                "tesco",
+                "lidl",
+                "billa"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "category",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "other",
+                "bakery",
+                "fruits",
+                "vegetables",
+                "meat",
+                "seafood",
+                "sport",
+                "beverages",
+                "snacks",
+                "grains&pasta",
+                "sauces",
+                "household&cleaning"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OfferDto"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The shop has no current flyer"
+          }
+        },
+        "summary": "Offers of the shop's current flyer; `?category=` filters",
+        "tags": [
+          "public"
+        ]
+      }
+    },
+    "/flyers/{id}/pages": {
+      "get": {
+        "operationId": "FlyersController_pages",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PageDto"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Flyer not found"
+          }
+        },
+        "summary": "Pages of a flyer with presigned image URLs (valid 1 hour)",
+        "tags": [
+          "public"
+        ]
+      }
+    },
+    "/admin/shops": {
+      "get": {
+        "operationId": "AdminShopsController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ShopStateDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or unknown API key"
+          }
+        },
+        "security": [
+          {
+            "api-key": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Every shop: current flyer, lease, retry, lastError",
+        "tags": [
+          "admin: shops"
+        ]
+      }
+    },
+    "/admin/shops/{shop}": {
+      "get": {
+        "operationId": "AdminShopsController_get",
+        "parameters": [
+          {
+            "name": "shop",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "enum": [
+                "kaufland",
+                "tesco",
+                "lidl",
+                "billa"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopStateDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or unknown API key"
+          }
+        },
+        "security": [
+          {
+            "api-key": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "One shop's state",
+        "tags": [
+          "admin: shops"
+        ]
+      }
+    },
+    "/admin/shops/{shop}/{action}": {
+      "post": {
+        "operationId": "AdminShopsController_trigger",
+        "parameters": [
+          {
+            "name": "shop",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "enum": [
+                "kaufland",
+                "tesco",
+                "lidl",
+                "billa"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "action",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "enum": [
+                "load",
+                "refresh",
+                "reparse"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShopStateDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or unknown API key"
+          },
+          "404": {
+            "description": "No current flyer (reparse)"
+          },
+          "409": {
+            "description": "Shop busy"
+          },
+          "410": {
+            "description": "Page images expired in R2 (reparse)"
+          }
+        },
+        "security": [
+          {
+            "api-key": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Start load / refresh / reparse in the background\n202 with the shop state · 409 shop busy · 410 images expired (reparse) · 404 no current flyer (reparse)",
+        "tags": [
+          "admin: shops"
+        ]
+      }
+    },
+    "/admin/source-providers": {
+      "get": {
+        "operationId": "AdminSourceProvidersController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SourceProviderDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or unknown API key"
+          }
+        },
+        "security": [
+          {
+            "api-key": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Every shop with its effective config",
+        "tags": [
+          "admin: source providers"
+        ]
+      }
+    },
+    "/admin/source-providers/{shop}": {
+      "get": {
+        "operationId": "AdminSourceProvidersController_get",
+        "parameters": [
+          {
+            "name": "shop",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "enum": [
+                "kaufland",
+                "tesco",
+                "lidl",
+                "billa"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceProviderDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or unknown API key"
+          }
+        },
+        "security": [
+          {
+            "api-key": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "One shop with its effective config",
+        "tags": [
+          "admin: source providers"
+        ]
+      }
+    },
+    "/admin/source-providers/{shop}/discover": {
+      "post": {
+        "operationId": "AdminSourceProvidersController_discover",
+        "parameters": [
+          {
+            "name": "shop",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "enum": [
+                "kaufland",
+                "tesco",
+                "lidl",
+                "billa"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "source": {
+                        "type": "object",
+                        "properties": {
+                          "flyerUrl": {
+                            "type": "string",
+                            "format": "uri"
+                          },
+                          "flyerSubcategory": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        },
+                        "additionalProperties": false
+                      },
+                      "defaultFlyerDuration": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 31
+                      },
+                      "timezone": {
+                        "type": "string"
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "source": {
+                        "type": "object",
+                        "properties": {
+                          "flyerUrl": {
+                            "type": "string",
+                            "format": "uri"
+                          },
+                          "flyerType": {
+                            "type": "string",
+                            "enum": [
+                              "HM",
+                              "SM",
+                              "CAT"
+                            ]
+                          },
+                          "pages": {
+                            "type": "string",
+                            "enum": [
+                              "pdf",
+                              "images"
+                            ]
+                          }
+                        },
+                        "additionalProperties": false
+                      },
+                      "defaultFlyerDuration": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 31
+                      },
+                      "timezone": {
+                        "type": "string"
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "source": {
+                        "type": "object",
+                        "properties": {
+                          "flyerUrl": {
+                            "type": "string",
+                            "format": "uri"
+                          },
+                          "apiUrl": {
+                            "type": "string",
+                            "format": "uri"
+                          },
+                          "regionId": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "imageVariant": {
+                            "type": "string",
+                            "enum": [
+                              "image",
+                              "zoom"
+                            ]
+                          },
+                          "pages": {
+                            "type": "string",
+                            "enum": [
+                              "images",
+                              "pdf"
+                            ]
+                          }
+                        },
+                        "additionalProperties": false
+                      },
+                      "defaultFlyerDuration": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 31
+                      },
+                      "timezone": {
+                        "type": "string"
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "source": {
+                        "type": "object",
+                        "properties": {
+                          "flyerUrl": {
+                            "type": "string",
+                            "format": "uri"
+                          }
+                        },
+                        "additionalProperties": false
+                      },
+                      "defaultFlyerDuration": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 31
+                      },
+                      "timezone": {
+                        "type": "string"
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscoverDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid overrides"
+          },
+          "401": {
+            "description": "Missing or unknown API key"
+          }
+        },
+        "security": [
+          {
+            "api-key": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Dry run for one shop, optionally with one-off overrides in the body",
+        "tags": [
+          "admin: source providers"
+        ]
+      }
+    },
+    "/admin/source-providers/discover": {
+      "post": {
+        "operationId": "AdminSourceProvidersController_discoverMany",
+        "parameters": [],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "shops": {
+                    "minItems": 1,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "kaufland",
+                        "tesco",
+                        "lidl",
+                        "billa"
+                      ]
+                    }
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DiscoverResultDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or unknown API key"
+          }
+        },
+        "security": [
+          {
+            "api-key": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Dry run for several shops (default: the enabled ones)",
+        "tags": [
+          "admin: source providers"
+        ]
+      }
+    },
+    "/admin/flyers": {
+      "get": {
+        "operationId": "AdminPageParserController_listFlyers",
+        "parameters": [
+          {
+            "name": "shop",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "kaufland",
+                "tesco",
+                "lidl",
+                "billa"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AdminFlyerDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or unknown API key"
+          }
+        },
+        "security": [
+          {
+            "api-key": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Flyers, newest first; `?shop=` filters",
+        "tags": [
+          "admin: flyers"
+        ]
+      }
+    },
+    "/admin/flyers/{id}": {
+      "get": {
+        "operationId": "AdminPageParserController_getFlyer",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminFlyerDetailDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or unknown API key"
+          },
+          "404": {
+            "description": "Flyer not found"
+          }
+        },
+        "security": [
+          {
+            "api-key": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "A flyer with its pages",
+        "tags": [
+          "admin: flyers"
+        ]
+      }
+    },
+    "/admin/pages/{pageId}": {
+      "get": {
+        "operationId": "AdminPageParserController_getPage",
+        "parameters": [
+          {
+            "name": "pageId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminPageDetailDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or unknown API key"
+          },
+          "404": {
+            "description": "Page not found"
+          }
+        },
+        "security": [
+          {
+            "api-key": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "A page with its offers and a presigned image URL",
+        "tags": [
+          "admin: flyers"
+        ]
+      }
+    },
+    "/admin/pages/{pageId}/reparse": {
+      "post": {
+        "operationId": "AdminPageParserController_reparsePage",
+        "parameters": [
+          {
+            "name": "pageId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminPageDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or unknown API key"
+          },
+          "404": {
+            "description": "Page not found"
+          },
+          "409": {
+            "description": "Shop busy"
+          },
+          "410": {
+            "description": "Page image expired in R2"
+          }
+        },
+        "security": [
+          {
+            "api-key": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Re-parse one page: 202 · 409 shop busy · 410 image expired",
+        "tags": [
+          "admin: flyers"
+        ]
+      }
+    },
+    "/admin/pages/{pageId}/offers": {
+      "post": {
+        "operationId": "AdminPageParserController_addOffer",
+        "parameters": [
+          {
+            "name": "pageId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "category": {
+                    "nullable": true,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "other",
+                        "bakery",
+                        "fruits",
+                        "vegetables",
+                        "meat",
+                        "seafood",
+                        "sport",
+                        "beverages",
+                        "snacks",
+                        "grains&pasta",
+                        "sauces",
+                        "household&cleaning"
+                      ]
+                    }
+                  },
+                  "boundaryBox": {
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "type": "array",
+                          "items": {
+                            "anyOf": [
+                              {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1
+                              },
+                              {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1
+                              }
+                            ]
+                          },
+                          "minItems": 2,
+                          "maxItems": 2
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "anyOf": [
+                              {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1
+                              },
+                              {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1
+                              }
+                            ]
+                          },
+                          "minItems": 2,
+                          "maxItems": 2
+                        }
+                      ]
+                    },
+                    "minItems": 2,
+                    "maxItems": 2
+                  },
+                  "basePrice": {
+                    "nullable": true,
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 999999.99
+                  },
+                  "discountedPrice": {
+                    "nullable": true,
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 999999.99
+                  },
+                  "discount": {
+                    "nullable": true,
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 100
+                  },
+                  "loyaltyPrice": {
+                    "nullable": true,
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 999999.99
+                  },
+                  "loyaltyDiscount": {
+                    "nullable": true,
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 100
+                  }
+                },
+                "required": [
+                  "title",
+                  "boundaryBox"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOfferDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or unknown API key"
+          },
+          "404": {
+            "description": "Page not found"
+          }
+        },
+        "security": [
+          {
+            "api-key": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Add an offer by hand",
+        "tags": [
+          "admin: flyers"
+        ]
+      }
+    },
+    "/admin/offers/{id}": {
+      "patch": {
+        "operationId": "AdminPageParserController_updateOffer",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "category": {
+                    "nullable": true,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "other",
+                        "bakery",
+                        "fruits",
+                        "vegetables",
+                        "meat",
+                        "seafood",
+                        "sport",
+                        "beverages",
+                        "snacks",
+                        "grains&pasta",
+                        "sauces",
+                        "household&cleaning"
+                      ]
+                    }
+                  },
+                  "boundaryBox": {
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "type": "array",
+                          "items": {
+                            "anyOf": [
+                              {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1
+                              },
+                              {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1
+                              }
+                            ]
+                          },
+                          "minItems": 2,
+                          "maxItems": 2
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "anyOf": [
+                              {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1
+                              },
+                              {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1
+                              }
+                            ]
+                          },
+                          "minItems": 2,
+                          "maxItems": 2
+                        }
+                      ]
+                    },
+                    "minItems": 2,
+                    "maxItems": 2
+                  },
+                  "basePrice": {
+                    "nullable": true,
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 999999.99
+                  },
+                  "discountedPrice": {
+                    "nullable": true,
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 999999.99
+                  },
+                  "discount": {
+                    "nullable": true,
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 100
+                  },
+                  "loyaltyPrice": {
+                    "nullable": true,
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 999999.99
+                  },
+                  "loyaltyDiscount": {
+                    "nullable": true,
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 100
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOfferDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or unknown API key"
+          },
+          "404": {
+            "description": "Offer not found"
+          }
+        },
+        "security": [
+          {
+            "api-key": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Edit an offer",
+        "tags": [
+          "admin: flyers"
+        ]
+      },
+      "delete": {
+        "operationId": "AdminPageParserController_deleteOffer",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted"
+          },
+          "401": {
+            "description": "Missing or unknown API key"
+          },
+          "404": {
+            "description": "Offer not found"
+          }
+        },
+        "security": [
+          {
+            "api-key": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete an offer",
+        "tags": [
+          "admin: flyers"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Flyer parser API",
+    "description": "Weekly flyer offers of Slovak grocery chains. Admin routes need an API key (Bearer or X-API-Key).",
+    "version": "0.0.1",
+    "contact": {}
+  },
+  "tags": [
+    {
+      "name": "public",
+      "description": "Read API for the frontend: shops, current offers, pages"
+    },
+    {
+      "name": "admin: shops",
+      "description": "Shop state and pipeline triggers"
+    },
+    {
+      "name": "admin: source providers",
+      "description": "Source configs and dry-run discovery (nothing is stored)"
+    },
+    {
+      "name": "admin: flyers",
+      "description": "Parsed flyers, pages and offers; manual edits"
+    }
+  ],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http",
+        "description": "Admin API key (same value as X-API-Key)"
+      },
+      "api-key": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Admin API key (same value as Bearer)"
+      }
+    },
+    "schemas": {
+      "FlyerSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "e.g. kaufland_2026-10-14_2026-10-20"
+          },
+          "validFrom": {
+            "type": "string",
+            "description": "YYYY-MM-DD"
+          },
+          "validTo": {
+            "type": "string",
+            "description": "YYYY-MM-DD"
+          }
+        },
+        "required": [
+          "id",
+          "validFrom",
+          "validTo"
+        ]
+      },
+      "ShopDto": {
+        "type": "object",
+        "properties": {
+          "shop": {
+            "enum": [
+              "kaufland",
+              "tesco",
+              "lidl",
+              "billa"
+            ],
+            "type": "string"
+          },
+          "flyer": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FlyerSummaryDto"
+              }
+            ]
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name"
+          }
+        },
+        "required": [
+          "shop",
+          "flyer",
+          "name"
+        ]
+      },
+      "OfferDto": {
+        "type": "object",
+        "properties": {
+          "shop": {
+            "enum": [
+              "kaufland",
+              "tesco",
+              "lidl",
+              "billa"
+            ],
+            "type": "string"
+          },
+          "category": {
+            "nullable": true,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "other",
+                "bakery",
+                "fruits",
+                "vegetables",
+                "meat",
+                "seafood",
+                "sport",
+                "beverages",
+                "snacks",
+                "grains&pasta",
+                "sauces",
+                "household&cleaning"
+              ]
+            }
+          },
+          "boundaryBox": {
+            "description": "`[[x1, y1], [x2, y2]]` as fractions of the page width/height",
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
+            },
+            "example": [
+              [
+                0.1,
+                0.2
+              ],
+              [
+                0.4,
+                0.5
+              ]
+            ]
+          },
+          "id": {
+            "type": "string",
+            "description": "UUID"
+          },
+          "pageId": {
+            "type": "string",
+            "description": "e.g. kaufland_2026-10-14_2026-10-20_page_07"
+          },
+          "flyerId": {
+            "type": "string",
+            "description": "e.g. kaufland_2026-10-14_2026-10-20"
+          },
+          "position": {
+            "type": "number",
+            "description": "Order of the offer on its page, 0-based"
+          },
+          "title": {
+            "type": "string"
+          },
+          "basePrice": {
+            "type": "number",
+            "nullable": true,
+            "description": "EUR"
+          },
+          "discountedPrice": {
+            "type": "number",
+            "nullable": true,
+            "description": "EUR"
+          },
+          "discount": {
+            "type": "number",
+            "nullable": true,
+            "description": "Discount of `discountedPrice` in percent"
+          },
+          "loyaltyPrice": {
+            "type": "number",
+            "nullable": true,
+            "description": "EUR, with the shop's loyalty card"
+          },
+          "loyaltyDiscount": {
+            "type": "number",
+            "nullable": true,
+            "description": "Discount of `loyaltyPrice` in percent"
+          },
+          "validFrom": {
+            "type": "string",
+            "description": "YYYY-MM-DD"
+          },
+          "validTo": {
+            "type": "string",
+            "description": "YYYY-MM-DD"
+          }
+        },
+        "required": [
+          "shop",
+          "category",
+          "boundaryBox",
+          "id",
+          "pageId",
+          "flyerId",
+          "position",
+          "title",
+          "basePrice",
+          "discountedPrice",
+          "discount",
+          "loyaltyPrice",
+          "loyaltyDiscount",
+          "validFrom",
+          "validTo"
+        ]
+      },
+      "PageStatus": {
+        "type": "string",
+        "enum": [
+          "PENDING",
+          "UPLOADED",
+          "PARSED",
+          "FAILED"
+        ]
+      },
+      "PageDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PageStatus"
+              }
+            ]
+          },
+          "id": {
+            "type": "string",
+            "description": "e.g. kaufland_2026-10-14_2026-10-20_page_07"
+          },
+          "pageNumber": {
+            "type": "number",
+            "description": "1-based"
+          },
+          "width": {
+            "type": "number",
+            "nullable": true,
+            "description": "Pixels"
+          },
+          "height": {
+            "type": "number",
+            "nullable": true,
+            "description": "Pixels"
+          },
+          "imageUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "Presigned URL, valid 1 hour; null when the image is not in R2"
+          }
+        },
+        "required": [
+          "status",
+          "id",
+          "pageNumber",
+          "width",
+          "height",
+          "imageUrl"
+        ]
+      },
+      "RetryReason": {
+        "type": "string",
+        "enum": [
+          "AWAITING_NEW_FLYER",
+          "FETCH_FAILED",
+          "PAGES_FAILED"
+        ]
+      },
+      "RetryStateDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RetryReason"
+              }
+            ]
+          },
+          "attempts": {
+            "type": "number"
+          },
+          "at": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "When the retry tick picks the shop up; null = no retry scheduled"
+          }
+        },
+        "required": [
+          "reason",
+          "attempts",
+          "at"
+        ]
+      },
+      "ShopStateDto": {
+        "type": "object",
+        "properties": {
+          "shop": {
+            "enum": [
+              "kaufland",
+              "tesco",
+              "lidl",
+              "billa"
+            ],
+            "type": "string"
+          },
+          "currentFlyer": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FlyerSummaryDto"
+              }
+            ]
+          },
+          "isAvailable": {
+            "type": "boolean",
+            "description": "A READY or PARTIAL flyer is shown to the frontend"
+          },
+          "awaitingNewFlyer": {
+            "type": "boolean",
+            "description": "Waiting for the site to publish a newer flyer"
+          },
+          "retry": {
+            "$ref": "#/components/schemas/RetryStateDto"
+          },
+          "lockedUntil": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "A sync holds the shop until then; null or past = free"
+          },
+          "lastAttemptAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "lastSuccessAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "lastError": {
+            "type": "string",
+            "nullable": true
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "shop",
+          "currentFlyer",
+          "isAvailable",
+          "awaitingNewFlyer",
+          "retry",
+          "lockedUntil",
+          "lastAttemptAt",
+          "lastSuccessAt",
+          "lastError",
+          "updatedAt"
+        ]
+      },
+      "SourceProviderDto": {
+        "type": "object",
+        "properties": {
+          "shop": {
+            "enum": [
+              "kaufland",
+              "tesco",
+              "lidl",
+              "billa"
+            ],
+            "type": "string"
+          },
+          "config": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Effective ShopConfig (static config with overrides applied)"
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Included in scheduled runs"
+          }
+        },
+        "required": [
+          "shop",
+          "config",
+          "enabled"
+        ]
+      },
+      "DiscoveredFlyerDto": {
+        "type": "object",
+        "properties": {
+          "shop": {
+            "enum": [
+              "kaufland",
+              "tesco",
+              "lidl",
+              "billa"
+            ],
+            "type": "string"
+          },
+          "pages": {
+            "description": "One PDF to split, or ready page images",
+            "oneOf": [
+              {
+                "type": "object",
+                "required": [
+                  "kind",
+                  "url"
+                ],
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "pdf"
+                    ]
+                  },
+                  "url": {
+                    "type": "string"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "required": [
+                  "kind",
+                  "urls"
+                ],
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "images"
+                    ]
+                  },
+                  "urls": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          "meta": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Provider-specific details"
+          },
+          "flyerId": {
+            "type": "string",
+            "description": "e.g. kaufland_2026-10-14_2026-10-20"
+          },
+          "validFrom": {
+            "type": "string",
+            "description": "YYYY-MM-DD"
+          },
+          "validTo": {
+            "type": "string",
+            "description": "YYYY-MM-DD"
+          },
+          "validToEstimated": {
+            "type": "boolean",
+            "description": "validTo came from defaultFlyerDuration instead of the site"
+          },
+          "sourceUrl": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "shop",
+          "pages",
+          "meta",
+          "flyerId",
+          "validFrom",
+          "validTo",
+          "validToEstimated",
+          "sourceUrl"
+        ]
+      },
+      "DiscoverDto": {
+        "type": "object",
+        "properties": {
+          "config": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Effective ShopConfig (static config with overrides applied)"
+          },
+          "flyer": {
+            "$ref": "#/components/schemas/DiscoveredFlyerDto"
+          }
+        },
+        "required": [
+          "config",
+          "flyer"
+        ]
+      },
+      "DiscoverResultDto": {
+        "type": "object",
+        "properties": {
+          "shop": {
+            "enum": [
+              "kaufland",
+              "tesco",
+              "lidl",
+              "billa"
+            ],
+            "type": "string"
+          },
+          "flyer": {
+            "$ref": "#/components/schemas/DiscoveredFlyerDto"
+          },
+          "error": {
+            "type": "string"
+          },
+          "ok": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "shop",
+          "ok"
+        ]
+      },
+      "FlyerStatus": {
+        "type": "string",
+        "enum": [
+          "DOWNLOADING",
+          "PAGES_UPLOADED",
+          "PARSING",
+          "READY",
+          "PARTIAL",
+          "FAILED"
+        ]
+      },
+      "AdminFlyerDto": {
+        "type": "object",
+        "properties": {
+          "shop": {
+            "enum": [
+              "kaufland",
+              "tesco",
+              "lidl",
+              "billa"
+            ],
+            "type": "string"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FlyerStatus"
+              }
+            ]
+          },
+          "context": {
+            "type": "object",
+            "additionalProperties": true,
+            "nullable": true,
+            "description": "Source details kept from discovery (source URL, provider meta)"
+          },
+          "id": {
+            "type": "string",
+            "description": "e.g. kaufland_2026-10-14_2026-10-20"
+          },
+          "validFrom": {
+            "type": "string",
+            "description": "YYYY-MM-DD"
+          },
+          "validTo": {
+            "type": "string",
+            "description": "YYYY-MM-DD"
+          },
+          "pageCount": {
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "shop",
+          "status",
+          "context",
+          "id",
+          "validFrom",
+          "validTo",
+          "pageCount",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "AdminPageDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PageStatus"
+              }
+            ]
+          },
+          "id": {
+            "type": "string",
+            "description": "e.g. kaufland_2026-10-14_2026-10-20_page_07"
+          },
+          "flyerId": {
+            "type": "string"
+          },
+          "pageNumber": {
+            "type": "number",
+            "description": "1-based"
+          },
+          "imageKey": {
+            "type": "string",
+            "nullable": true,
+            "description": "R2 key, e.g. flyers/<shop>/<flyerId>/pages/<pageId>.<hash8>.webp"
+          },
+          "imageHash": {
+            "type": "string",
+            "nullable": true
+          },
+          "width": {
+            "type": "number",
+            "nullable": true,
+            "description": "Pixels"
+          },
+          "height": {
+            "type": "number",
+            "nullable": true,
+            "description": "Pixels"
+          },
+          "parserVersion": {
+            "type": "number",
+            "nullable": true,
+            "description": "PARSER_VERSION that produced the offers"
+          },
+          "model": {
+            "type": "string",
+            "nullable": true,
+            "description": "Gemini model that produced the offers"
+          },
+          "attempts": {
+            "type": "number",
+            "description": "Parse attempts in the last run"
+          },
+          "lastError": {
+            "type": "string",
+            "nullable": true
+          },
+          "parsedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "status",
+          "id",
+          "flyerId",
+          "pageNumber",
+          "imageKey",
+          "imageHash",
+          "width",
+          "height",
+          "parserVersion",
+          "model",
+          "attempts",
+          "lastError",
+          "parsedAt"
+        ]
+      },
+      "AdminFlyerDetailDto": {
+        "type": "object",
+        "properties": {
+          "shop": {
+            "enum": [
+              "kaufland",
+              "tesco",
+              "lidl",
+              "billa"
+            ],
+            "type": "string"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FlyerStatus"
+              }
+            ]
+          },
+          "context": {
+            "type": "object",
+            "additionalProperties": true,
+            "nullable": true,
+            "description": "Source details kept from discovery (source URL, provider meta)"
+          },
+          "id": {
+            "type": "string",
+            "description": "e.g. kaufland_2026-10-14_2026-10-20"
+          },
+          "validFrom": {
+            "type": "string",
+            "description": "YYYY-MM-DD"
+          },
+          "validTo": {
+            "type": "string",
+            "description": "YYYY-MM-DD"
+          },
+          "pageCount": {
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "pages": {
+            "description": "In page order",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminPageDto"
+            }
+          }
+        },
+        "required": [
+          "shop",
+          "status",
+          "context",
+          "id",
+          "validFrom",
+          "validTo",
+          "pageCount",
+          "createdAt",
+          "updatedAt",
+          "pages"
+        ]
+      },
+      "AdminOfferDto": {
+        "type": "object",
+        "properties": {
+          "shop": {
+            "enum": [
+              "kaufland",
+              "tesco",
+              "lidl",
+              "billa"
+            ],
+            "type": "string"
+          },
+          "category": {
+            "nullable": true,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "other",
+                "bakery",
+                "fruits",
+                "vegetables",
+                "meat",
+                "seafood",
+                "sport",
+                "beverages",
+                "snacks",
+                "grains&pasta",
+                "sauces",
+                "household&cleaning"
+              ]
+            }
+          },
+          "boundaryBox": {
+            "description": "`[[x1, y1], [x2, y2]]` as fractions of the page width/height",
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
+            },
+            "example": [
+              [
+                0.1,
+                0.2
+              ],
+              [
+                0.4,
+                0.5
+              ]
+            ]
+          },
+          "id": {
+            "type": "string",
+            "description": "UUID"
+          },
+          "pageId": {
+            "type": "string",
+            "description": "e.g. kaufland_2026-10-14_2026-10-20_page_07"
+          },
+          "flyerId": {
+            "type": "string",
+            "description": "e.g. kaufland_2026-10-14_2026-10-20"
+          },
+          "position": {
+            "type": "number",
+            "description": "Order of the offer on its page, 0-based"
+          },
+          "title": {
+            "type": "string"
+          },
+          "basePrice": {
+            "type": "number",
+            "nullable": true,
+            "description": "EUR"
+          },
+          "discountedPrice": {
+            "type": "number",
+            "nullable": true,
+            "description": "EUR"
+          },
+          "discount": {
+            "type": "number",
+            "nullable": true,
+            "description": "Discount of `discountedPrice` in percent"
+          },
+          "loyaltyPrice": {
+            "type": "number",
+            "nullable": true,
+            "description": "EUR, with the shop's loyalty card"
+          },
+          "loyaltyDiscount": {
+            "type": "number",
+            "nullable": true,
+            "description": "Discount of `loyaltyPrice` in percent"
+          },
+          "validFrom": {
+            "type": "string",
+            "description": "YYYY-MM-DD"
+          },
+          "validTo": {
+            "type": "string",
+            "description": "YYYY-MM-DD"
+          },
+          "cropKey": {
+            "type": "string",
+            "nullable": true,
+            "description": "R2 key of the cropped offer image, e.g. flyers/<shop>/<flyerId>/offers/<offerId>.<hash8>.webp"
+          }
+        },
+        "required": [
+          "shop",
+          "category",
+          "boundaryBox",
+          "id",
+          "pageId",
+          "flyerId",
+          "position",
+          "title",
+          "basePrice",
+          "discountedPrice",
+          "discount",
+          "loyaltyPrice",
+          "loyaltyDiscount",
+          "validFrom",
+          "validTo",
+          "cropKey"
+        ]
+      },
+      "AdminPageDetailDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PageStatus"
+              }
+            ]
+          },
+          "id": {
+            "type": "string",
+            "description": "e.g. kaufland_2026-10-14_2026-10-20_page_07"
+          },
+          "flyerId": {
+            "type": "string"
+          },
+          "pageNumber": {
+            "type": "number",
+            "description": "1-based"
+          },
+          "imageKey": {
+            "type": "string",
+            "nullable": true,
+            "description": "R2 key, e.g. flyers/<shop>/<flyerId>/pages/<pageId>.<hash8>.webp"
+          },
+          "imageHash": {
+            "type": "string",
+            "nullable": true
+          },
+          "width": {
+            "type": "number",
+            "nullable": true,
+            "description": "Pixels"
+          },
+          "height": {
+            "type": "number",
+            "nullable": true,
+            "description": "Pixels"
+          },
+          "parserVersion": {
+            "type": "number",
+            "nullable": true,
+            "description": "PARSER_VERSION that produced the offers"
+          },
+          "model": {
+            "type": "string",
+            "nullable": true,
+            "description": "Gemini model that produced the offers"
+          },
+          "attempts": {
+            "type": "number",
+            "description": "Parse attempts in the last run"
+          },
+          "lastError": {
+            "type": "string",
+            "nullable": true
+          },
+          "parsedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "imageUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "Presigned URL, valid 1 hour; null when the image is not in R2"
+          },
+          "offers": {
+            "description": "In page order",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminOfferDto"
+            }
+          }
+        },
+        "required": [
+          "status",
+          "id",
+          "flyerId",
+          "pageNumber",
+          "imageKey",
+          "imageHash",
+          "width",
+          "height",
+          "parserVersion",
+          "model",
+          "attempts",
+          "lastError",
+          "parsedAt",
+          "imageUrl",
+          "offers"
+        ]
+      }
+    }
+  }
+}
