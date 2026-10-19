@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import type { Env } from '../config/env.schema';
 import { SHOP_CONFIGS } from '../shops/shop.config';
 import type { ShopKey } from '../shops/shop.config.type';
 import { ShopStateService } from '../shops/shop-state.service';
@@ -14,11 +16,15 @@ import type { ProductCategoryKey } from './types/product-category.type';
 /** Read-only queries for the public API */
 @Injectable()
 export class FlyersService {
+  /** Public base URL of this API, without a trailing slash */
+  private readonly publicUrl: string;
+
   /**
    * @param pages - FlyerPage repository
    * @param offers - FlyerOffer repository
    * @param shopState - Current flyer per shop
    * @param r2 - Presigned page image URLs
+   * @param config - API_PUBLIC_URL for stable image links
    */
   constructor(
     @InjectRepository(FlyerPage) private readonly pages: Repository<FlyerPage>,
@@ -26,7 +32,10 @@ export class FlyersService {
     private readonly offers: Repository<FlyerOffer>,
     private readonly shopState: ShopStateService,
     private readonly r2: R2Service,
-  ) {}
+    config: ConfigService<Env, true>,
+  ) {
+    this.publicUrl = config.get('API_PUBLIC_URL', { infer: true });
+  }
 
   /** Shops with a READY or PARTIAL current flyer */
   async availableShops(): Promise<ShopDto[]> {
@@ -60,7 +69,7 @@ export class FlyersService {
     return query.getMany();
   }
 
-  /** Pages of a flyer with presigned image URLs (null when the image is not in R2) */
+  /** Pages of a flyer with stable image URLs (null when the image is not in R2) */
   async pagesOf(flyerId: string): Promise<PageDto[]> {
     const pages = await this.pages.find({
       where: { flyerId },
@@ -69,15 +78,29 @@ export class FlyersService {
     if (!pages.length)
       throw new NotFoundException(`Flyer ${flyerId} not found`);
 
-    return Promise.all(
-      pages.map(async (page) => ({
-        id: page.id,
-        pageNumber: page.pageNumber,
-        status: page.status,
-        width: page.width,
-        height: page.height,
-        imageUrl: page.imageKey ? await this.r2.presign(page.imageKey) : null,
-      })),
-    );
+    return pages.map((page) => ({
+      id: page.id,
+      pageNumber: page.pageNumber,
+      status: page.status,
+      width: page.width,
+      height: page.height,
+      imageUrl: page.imageKey ? this.stableImageUrl(page.id) : null,
+    }));
+  }
+
+  /** Stable URL of a page image (`GET /pages/:id/image`); never expires, safe for the frontend to store */
+  stableImageUrl(pageId: string): string {
+    return `${this.publicUrl}/pages/${encodeURIComponent(pageId)}/image`;
+  }
+
+  /** Fresh presigned R2 URL of a page image; 404 when the page or its image is missing */
+  async pageImageUrl(pageId: string): Promise<string> {
+    const page = await this.pages.findOne({
+      where: { id: pageId },
+      select: { id: true, imageKey: true },
+    });
+    if (!page?.imageKey)
+      throw new NotFoundException(`Image of page ${pageId} not found`);
+    return this.r2.presign(page.imageKey);
   }
 }

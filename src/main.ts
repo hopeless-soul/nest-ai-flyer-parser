@@ -39,8 +39,10 @@ async function bootstrap(): Promise<void> {
   await app.listen(process.env.PORT ?? 3000);
   const url = await app.getUrl();
   logger.log(`${mode === 'all' ? 'API + worker' : 'API'} listening on ${url}`);
-  if (docs)
-    logger.log(`Swagger UI: ${url}/docs · OpenAPI JSON: ${url}/docs-json`);
+  if (docs) {
+    logger.log(`Swagger UI: ${url}/docs`);
+    logger.log(`OpenAPI JSON: ${url}/docs-json`);
+  }
 }
 
 bootstrap().catch((error) => {

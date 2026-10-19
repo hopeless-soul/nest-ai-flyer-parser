@@ -60,9 +60,20 @@ export class OfferDto {
   validFrom!: string;
   /** YYYY-MM-DD */
   validTo!: string;
+  /** Stable URL of the whole page image (`GET /pages/:id/image`), safe to store; crop it with `boundaryBox` */
+  imageUrl!: string;
 
-  /** Map an offer entity to its public shape */
-  static from(offer: FlyerOffer): OfferDto {
+  /**
+   * Map an offer entity to its public shape
+   * @param offer - Offer entity
+   * @param imageUrl - Stable URL of the offer's page image
+   */
+  static from(offer: FlyerOffer, imageUrl: string): OfferDto {
+    return { ...OfferDto.fieldsOf(offer), imageUrl };
+  }
+
+  /** The offer's own fields, without links (shared with AdminOfferDto) */
+  static fieldsOf(offer: FlyerOffer): Omit<OfferDto, 'imageUrl'> {
     return {
       id: offer.id,
       pageId: offer.pageId,

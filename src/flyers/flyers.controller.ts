@@ -1,5 +1,14 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
 import {
+  Controller,
+  Get,
+  Header,
+  type HttpRedirectResponse,
+  Param,
+  Query,
+  Redirect,
+} from '@nestjs/common';
+import {
+  ApiFoundResponse,
   ApiNotFoundResponse,
   ApiParam,
   ApiQuery,
@@ -44,13 +53,27 @@ export class FlyersController {
     query: z.infer<typeof offersQuerySchema>,
   ): Promise<OfferDto[]> {
     const offers = await this.flyers.currentOffers(shop, query.category);
-    return offers.map((offer) => OfferDto.from(offer));
+    // Note: offers exist only on parsed pages, whose image is always in R2
+    return offers.map((offer) =>
+      OfferDto.from(offer, this.flyers.stableImageUrl(offer.pageId)),
+    );
   }
 
-  /** Pages of a flyer with presigned image URLs (valid 1 hour) */
+  /** Pages of a flyer with stable image URLs (safe to store) */
   @Get('flyers/:id/pages')
   @ApiNotFoundResponse({ description: 'Flyer not found' })
   pages(@Param('id') id: string): Promise<PageDto[]> {
     return this.flyers.pagesOf(id);
+  }
+
+  /** Page image: 302 to a fresh presigned R2 URL (valid 1 hour) */
+  @Get('pages/:id/image')
+  @Redirect()
+  // Note: shorter than the 1-hour presign so a cached redirect never points at an expired URL
+  @Header('Cache-Control', 'private, max-age=3000')
+  @ApiFoundResponse({ description: 'Redirect to the image in R2' })
+  @ApiNotFoundResponse({ description: 'Page or its image not found' })
+  async pageImage(@Param('id') id: string): Promise<HttpRedirectResponse> {
+    return { url: await this.flyers.pageImageUrl(id), statusCode: 302 };
   }
 }

@@ -13,6 +13,11 @@ export const envSchema = z.object({
     .enum(['development', 'production', 'worker'])
     .default('development'),
   PORT: z.coerce.number().default(3000),
+  // Public base URL of this API; page image links point at it, so the frontend can store them
+  API_PUBLIC_URL: z
+    .url()
+    .default('http://localhost:3000')
+    .transform((url) => url.replace(/\/+$/, '')),
 
   // Database: DATABASE_URL wins over the DB_* parts when set
   DATABASE_URL: z.string().optional(),
@@ -33,7 +38,8 @@ export const envSchema = z.object({
   R2_ACCESS_KEY_ID: z.string().nonempty(),
   R2_SECRET_ACCESS_KEY: z.string().nonempty(),
   R2_BUCKET: z.string().nonempty(),
-  R2_PAGE_TTL_DAYS: z.coerce.number().int().positive().default(10),
+  // Note: outlive the frontend's cached flyer response (~7 days) plus pages uploaded before validFrom
+  R2_PAGE_TTL_DAYS: z.coerce.number().int().positive().default(21),
 
   // AI page parser
   GEMINI_API_KEY: z.string().nonempty(),

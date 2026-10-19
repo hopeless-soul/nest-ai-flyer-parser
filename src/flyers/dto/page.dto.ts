@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { PageStatus } from '../enums/page.enums';
 
-/** A flyer page for the frontend, with a short-lived image URL */
+/** A flyer page for the frontend, with a stable image URL */
 export class PageDto {
   /** e.g. kaufland_2026-10-14_2026-10-20_page_07 */
   id!: string;
@@ -13,6 +13,6 @@ export class PageDto {
   width!: number | null;
   /** Pixels */
   height!: number | null;
-  /** Presigned URL, valid 1 hour; null when the image is not in R2 */
+  /** Stable URL (`GET /pages/:id/image`, redirects to R2), safe to store; null when the image is not in R2 */
   imageUrl!: string | null;
 }
