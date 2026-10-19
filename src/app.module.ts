@@ -7,7 +7,7 @@ import { ShopsAdminModule } from './shops/admin/shops-admin.module';
 import { SourceProvidersAdminModule } from './source-providers/admin/source-providers-admin.module';
 import { WorkerModule } from './worker/worker.module';
 
-/** Feature modules of the HTTP API (`api`, `all`): public read API + unguarded admin routes */
+/** Feature modules of the HTTP API (`api`, `all`): public read API + API-key-guarded admin routes */
 const API_MODULES: Type[] = [
   FlyersModule,
   ShopsAdminModule,

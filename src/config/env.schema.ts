@@ -22,6 +22,12 @@ export const envSchema = z.object({
   DB_USERNAME: z.string().nonempty(),
   DB_PASSWORD: z.string().nonempty(),
 
+  // Admin API: comma-separated SHA-256 hex digests of accepted keys; unset = admin routes reject all
+  ADMIN_API_KEY_HASHES: z
+    .string()
+    .regex(/^[0-9a-f]{64}(,[0-9a-f]{64})*$/)
+    .optional(),
+
   // Cloudflare R2 (S3-compatible endpoint), private bucket
   R2_ACCOUNT_ID: z.string().nonempty(),
   R2_ACCESS_KEY_ID: z.string().nonempty(),

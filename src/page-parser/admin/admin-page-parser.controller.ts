@@ -11,8 +11,10 @@ import {
   Post,
   Query,
   UseFilters,
+  UseGuards,
 } from '@nestjs/common';
 import { z } from 'zod';
+import { ApiKeyGuard } from '../../common/guards/api-key.guard';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import { PipelineExceptionFilter } from '../../pipeline/pipeline.exception-filter';
 import { AdminPageParserService } from './admin-page-parser.service';
@@ -24,8 +26,9 @@ import {
   type OfferPatch,
 } from './offer.schema';
 
-/** Admin routes (unguarded) over parser results: flyers, pages, offers */
+/** Admin routes (API key) over parser results: flyers, pages, offers */
 @Controller('admin')
+@UseGuards(ApiKeyGuard)
 @UseFilters(PipelineExceptionFilter)
 export class AdminPageParserController {
   /** @param admin - Admin queries and edits */

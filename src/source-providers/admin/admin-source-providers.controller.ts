@@ -7,8 +7,10 @@ import {
   Param,
   Post,
   UseFilters,
+  UseGuards,
 } from '@nestjs/common';
 import { z } from 'zod';
+import { ApiKeyGuard } from '../../common/guards/api-key.guard';
 import { ParseShopKeyPipe } from '../../common/pipes/parse-shop-key.pipe';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import { ShopKeys, type ShopKey } from '../../shops/shop.config.type';
@@ -24,8 +26,9 @@ const discoverManySchema = z.preprocess(
   z.object({ shops: z.array(z.enum(ShopKeys)).min(1).optional() }).strict(),
 );
 
-/** Admin routes (unguarded): source configs and dry-run discovery; nothing is downloaded or stored */
+/** Admin routes (API key): source configs and dry-run discovery; nothing is downloaded or stored */
 @Controller('admin/source-providers')
+@UseGuards(ApiKeyGuard)
 @UseFilters(SourceProviderExceptionFilter)
 export class AdminSourceProvidersController {
   /** @param sources - Source providers entry point */

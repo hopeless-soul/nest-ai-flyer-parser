@@ -6,8 +6,10 @@ import {
   Param,
   Post,
   UseFilters,
+  UseGuards,
 } from '@nestjs/common';
 import { z } from 'zod';
+import { ApiKeyGuard } from '../../common/guards/api-key.guard';
 import { ParseShopKeyPipe } from '../../common/pipes/parse-shop-key.pipe';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import {
@@ -21,8 +23,9 @@ import { ShopStateService } from '../shop-state.service';
 /** Actions an admin can trigger per shop */
 const actionSchema = z.enum(['load', 'refresh', 'reparse']);
 
-/** Admin routes (unguarded): shop state and pipeline triggers */
+/** Admin routes (API key): shop state and pipeline triggers */
 @Controller('admin/shops')
+@UseGuards(ApiKeyGuard)
 @UseFilters(PipelineExceptionFilter)
 export class AdminShopsController {
   /**
