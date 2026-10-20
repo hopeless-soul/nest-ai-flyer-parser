@@ -11,5 +11,12 @@ export const ProductCategoryKeys = [
   'grains&pasta',
   'sauces',
   'household&cleaning',
+  // TODO: Cover new categories at frontend as well
+  'nonfood',
+  'sportsfood',
+  'pet',
+  'sweets',
+  'milk&dairy',
+  'baby'
 ] as const;
 export type ProductCategoryKey = (typeof ProductCategoryKeys)[number];
