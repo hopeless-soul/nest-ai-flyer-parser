@@ -37,8 +37,18 @@ function toPrice(value: unknown): number | null {
   return isFiniteNumber(value) && value >= 0 ? round(value, 2) : null;
 }
 
+/** Smaller offer boxes are grown to this size around their center; page fractions (0–1) */
+const MIN_BOX = { width: 0.05, height: 0.05 };
+
+/** Grow [lo, hi] to at least `min` around its center, shifted back inside [0, 1] */
+function growAxis(lo: number, hi: number, min: number): [number, number] {
+  const size = Math.max(hi - lo, min);
+  const start = clamp((lo + hi - size) / 2, 0, 1 - size);
+  return [start, start + size];
+}
+
 /**
- * Convert Gemini `box_2d` ([ymin, xmin, ymax, xmax], 0–1000) to 0–1 corners
+ * Convert Gemini `box_2d` ([ymin, xmin, ymax, xmax], 0–1000) to 0–1 corners, grown to at least `MIN_BOX`
  * @returns null if the box is malformed or has no area
  */
 function toBoundaryBox(value: unknown): BoundaryBox | null {
@@ -50,10 +60,12 @@ function toBoundaryBox(value: unknown): BoundaryBox | null {
     return null;
 
   const [a, b, c, d] = value.map((n) => clamp(n, 0, 1000) / 1000);
-  const [y1, y2] = a <= c ? [a, c] : [c, a];
-  const [x1, x2] = b <= d ? [b, d] : [d, b];
-  if (x2 - x1 <= 0 || y2 - y1 <= 0) return null;
+  const [ya, yb] = a <= c ? [a, c] : [c, a];
+  const [xa, xb] = b <= d ? [b, d] : [d, b];
+  if (xb - xa <= 0 || yb - ya <= 0) return null;
 
+  const [x1, x2] = growAxis(xa, xb, MIN_BOX.width);
+  const [y1, y2] = growAxis(ya, yb, MIN_BOX.height);
   return [
     [round(x1, 4), round(y1, 4)],
     [round(x2, 4), round(y2, 4)],

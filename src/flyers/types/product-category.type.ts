@@ -16,6 +16,6 @@ export const ProductCategoryKeys = [
   'pet',
   'sweets',
   'milk&dairy',
-  'baby'
+  'baby',
 ] as const;
 export type ProductCategoryKey = (typeof ProductCategoryKeys)[number];
