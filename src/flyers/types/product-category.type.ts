@@ -5,7 +5,6 @@ export const ProductCategoryKeys = [
   'vegetables',
   'meat',
   'seafood',
-  'sport',
   'beverages',
   'snacks',
   'grains&pasta',
