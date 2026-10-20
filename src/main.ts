@@ -1,8 +1,10 @@
 import { Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { SwaggerModule } from '@nestjs/swagger';
 import { resolveAppMode } from './app-mode';
 import { AppModule } from './app.module';
+import type { Env } from './config/env.schema';
 import { buildOpenApiDocument } from './openapi';
 
 // Note: APP_MODE is needed before ConfigModule reads .env; real env vars still win
@@ -29,6 +31,13 @@ async function bootstrap(): Promise<void> {
 
   const app = await NestFactory.create(AppModule.forMode(mode));
   app.enableShutdownHooks();
+
+  app.enableCors({
+    origin: app
+      .get(ConfigService<Env, true>)
+      .get('CORS_ORIGINS', { infer: true }),
+  });
+
   const docs = process.env.NODE_ENV !== 'production';
   if (docs) {
     // Note: Docs UI at /docs, JSON at /docs-json; never mounted in production
@@ -36,7 +45,9 @@ async function bootstrap(): Promise<void> {
       swaggerOptions: { persistAuthorization: true, docExpansion: 'none' },
     });
   }
-  await app.listen(process.env.PORT ?? 3000);
+
+  await app.listen(process.env.PORT ?? 4000);
+
   const url = await app.getUrl();
   logger.log(`${mode === 'all' ? 'API + worker' : 'API'} listening on ${url}`);
   if (docs) {

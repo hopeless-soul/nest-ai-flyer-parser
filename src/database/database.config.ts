@@ -2,7 +2,6 @@ import { ConfigService } from '@nestjs/config';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 
 export const databaseConfig = (config: ConfigService): TypeOrmModuleOptions => {
-  const isProduction = config.get<string>('NODE_ENV') === 'production';
   const databaseUrl = config.get<string>('DATABASE_URL');
 
   return {
@@ -17,7 +16,7 @@ export const databaseConfig = (config: ConfigService): TypeOrmModuleOptions => {
           database: config.get<string>('DB_NAME'),
         }),
     autoLoadEntities: true,
-    synchronize: !isProduction,
+    synchronize: config.get<boolean>('DB_SYNCHRONIZE'),
     extra: {
       max: 5,
       idleTimeoutMillis: 10000,

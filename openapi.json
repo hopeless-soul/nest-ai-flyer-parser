@@ -122,7 +122,34 @@
             "description": "Flyer not found"
           }
         },
-        "summary": "Pages of a flyer with presigned image URLs (valid 1 hour)",
+        "summary": "Pages of a flyer with stable image URLs (safe to store)",
+        "tags": [
+          "public"
+        ]
+      }
+    },
+    "/pages/{id}/image": {
+      "get": {
+        "operationId": "FlyersController_pageImage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirect to the image in R2"
+          },
+          "404": {
+            "description": "Page or its image not found"
+          }
+        },
+        "summary": "Page image: 302 to a fresh presigned R2 URL (valid 1 hour)",
         "tags": [
           "public"
         ]
@@ -1386,6 +1413,10 @@
           "validTo": {
             "type": "string",
             "description": "YYYY-MM-DD"
+          },
+          "imageUrl": {
+            "type": "string",
+            "description": "Stable URL of the whole page image (`GET /pages/:id/image`), safe to store; crop it with `boundaryBox`"
           }
         },
         "required": [
@@ -1403,7 +1434,8 @@
           "loyaltyPrice",
           "loyaltyDiscount",
           "validFrom",
-          "validTo"
+          "validTo",
+          "imageUrl"
         ]
       },
       "PageStatus": {
@@ -1446,7 +1478,7 @@
           "imageUrl": {
             "type": "string",
             "nullable": true,
-            "description": "Presigned URL, valid 1 hour; null when the image is not in R2"
+            "description": "Stable URL (`GET /pages/:id/image`, redirects to R2), safe to store; null when the image is not in R2"
           }
         },
         "required": [

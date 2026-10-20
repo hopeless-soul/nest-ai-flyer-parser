@@ -18,6 +18,11 @@ export const envSchema = z.object({
     .url()
     .default('http://localhost:3000')
     .transform((url) => url.replace(/\/+$/, '')),
+  // Comma-separated origins allowed by CORS (the frontend)
+  CORS_ORIGINS: z
+    .string()
+    .default('http://localhost:3000')
+    .transform((list) => list.split(',').map((origin) => origin.trim())),
 
   // Database: DATABASE_URL wins over the DB_* parts when set
   DATABASE_URL: z.string().optional(),
@@ -26,6 +31,8 @@ export const envSchema = z.object({
   DB_NAME: z.string().nonempty(),
   DB_USERNAME: z.string().nonempty(),
   DB_PASSWORD: z.string().nonempty(),
+  // Note: TypeORM schema sync; on in dev, in production only for the first deploy against an empty DB
+  DB_SYNCHRONIZE: z.stringbool().default(false),
 
   // Admin API: comma-separated SHA-256 hex digests of accepted keys; unset = admin routes reject all
   ADMIN_API_KEY_HASHES: z
