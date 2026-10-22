@@ -1,6 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { SwaggerModule } from '@nestjs/swagger';
 import { resolveAppMode } from './app-mode';
 import { AppModule } from './app.module';
@@ -29,8 +30,12 @@ async function bootstrap(): Promise<void> {
     return;
   }
 
-  const app = await NestFactory.create(AppModule.forMode(mode));
+  const app = await NestFactory.create<NestExpressApplication>(
+    AppModule.forMode(mode),
+  );
   app.enableShutdownHooks();
+  // Note: Railway's edge proxy sits in front; without this every client shares the proxy IP's rate limit
+  app.set('trust proxy', 1);
 
   app.enableCors({
     origin: app

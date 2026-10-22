@@ -24,6 +24,10 @@ export const envSchema = z.object({
     .default('http://localhost:3000')
     .transform((list) => list.split(',').map((origin) => origin.trim())),
 
+  // Rate limit per client IP: at most THROTTLE_LIMIT requests per THROTTLE_TTL milliseconds
+  THROTTLE_TTL: z.coerce.number().int().positive().default(60_000),
+  THROTTLE_LIMIT: z.coerce.number().int().positive().default(100),
+
   // Database: DATABASE_URL wins over the DB_* parts when set
   DATABASE_URL: z.string().optional(),
   DB_HOST: z.string().default('localhost'),
