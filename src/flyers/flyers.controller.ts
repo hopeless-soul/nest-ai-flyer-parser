@@ -15,8 +15,10 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { z } from 'zod';
+import { Throttle } from '@nestjs/throttler';
 import { ParseShopKeyPipe } from '../common/pipes/parse-shop-key.pipe';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
+import { IMAGE_THROTTLE } from '../config/throttler.config';
 import { ShopKeys, type ShopKey } from '../shops/shop.config.type';
 import { OfferDto } from './dto/offer.dto';
 import type { PageDto } from './dto/page.dto';
@@ -69,8 +71,10 @@ export class FlyersController {
   /** Page image: 302 to a fresh presigned R2 URL (valid 1 hour) */
   @Get('pages/:id/image')
   @Redirect()
-  // Note: shorter than the 1-hour presign so a cached redirect never points at an expired URL
-  @Header('Cache-Control', 'private, max-age=3000')
+  @Throttle({ default: IMAGE_THROTTLE })
+  // Note: shorter than the 1-hour presign so a cached redirect never points at an expired URL.
+  // public: the target is the same for every client, so shared caches may keep it too
+  @Header('Cache-Control', 'public, max-age=3000')
   @ApiFoundResponse({ description: 'Redirect to the image in R2' })
   @ApiNotFoundResponse({ description: 'Page or its image not found' })
   async pageImage(@Param('id') id: string): Promise<HttpRedirectResponse> {

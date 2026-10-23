@@ -6,6 +6,7 @@ import type { AppMode } from './app-mode';
 import { throttlerConfig } from './config/throttler.config';
 import { CoreModule } from './core/core.module';
 import { FlyersModule } from './flyers/flyers.module';
+import { HealthModule } from './health/health.module';
 import { PageParserAdminModule } from './page-parser/admin/page-parser-admin.module';
 import { ShopsAdminModule } from './shops/admin/shops-admin.module';
 import { SourceProvidersAdminModule } from './source-providers/admin/source-providers-admin.module';
@@ -17,6 +18,7 @@ const API_MODULES: (Type | DynamicModule)[] = [
     inject: [ConfigService],
     useFactory: throttlerConfig,
   }),
+  HealthModule,
   FlyersModule,
   ShopsAdminModule,
   SourceProvidersAdminModule,
